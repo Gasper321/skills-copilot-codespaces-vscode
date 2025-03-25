@@ -1,14 +1,21 @@
-version: 2.1  # CircleCI version
+version: 2.1
 
 jobs:
-  build-and-test:  # Runs tests, builds assets
+  build-and-test:
     docker:
-      - image: cimg/node:18.17  # Node.js image
+      - image: cimg/node:18.17
     steps:
-      - checkout  # Pulls code from repo
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-deps-{{ checksum "package-lock.json" }}
       - run:
           name: Install dependencies
           command: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-deps-{{ checksum "package-lock.json" }}
       - run:
           name: Run tests
           command: npm test
@@ -16,23 +23,25 @@ jobs:
           name: Build project
           command: npm run build
 
-  deploy:  # Deploys to Netlify (example)
+  deploy:
     docker:
       - image: cimg/node:18.17
     steps:
       - checkout
       - run:
+          name: Install Netlify CLI
+          command: npm install -g netlify-cli
+      - run:
           name: Deploy to Netlify
-          command: |
-            npm install -g netlify-cli
-            netlify deploy --prod
+          command: netlify deploy --prod
 
 workflows:
-  main:  # Orchestrates jobs
+  main:
     jobs:
       - build-and-test
       - deploy:
-          requires: [build-and-test]  # Only deploy if tests pass
+          requires:
+            - build-and-test
           filters:
             branches:
-              only: main  # Deploy only from main branch.
+              only: main
