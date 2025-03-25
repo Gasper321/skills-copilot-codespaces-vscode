@@ -16,7 +16,8 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: http-server -p 8080  # Hosts your app (adjust port if needed)
+      - run: npm install -g netlify-cli
+      - run: netlify deploy --prod --dir .
 
 workflows:
   build-deploy:
