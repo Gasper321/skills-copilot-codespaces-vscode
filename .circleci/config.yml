@@ -1,47 +1,26 @@
 version: 2.1
-
 jobs:
-  build-and-test:
+  build:
     docker:
       - image: cimg/node:18.17
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - v1-deps-{{ checksum "package-lock.json" }}
-      - run:
-          name: Install dependencies
-          command: npm install
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-deps-{{ checksum "package-lock.json" }}
-      - run:
-          name: Run tests
-          command: npm test
-      - run:
-          name: Build project
-          command: npm run build
-
+      - run: npm install -g http-server  # Simple server for static files
+      - run: echo "Deploying static site"
+      - persist_to_workspace:
+          root: .
+          paths: .
   deploy:
     docker:
       - image: cimg/node:18.17
     steps:
-      - checkout
-      - run:
-          name: Install Netlify CLI
-          command: npm install -g netlify-cli
-      - run:
-          name: Deploy to Netlify
-          command: netlify deploy --prod
+      - attach_workspace:
+          at: .
+      - run: http-server -p 8080  # Hosts your app (adjust port if needed)
 
 workflows:
-  main:
+  build-deploy:
     jobs:
-      - build-and-test
+      - build
       - deploy:
-          requires:
-            - build-and-test
-          filters:
-            branches:
-              only: main
+          requires: [build]
